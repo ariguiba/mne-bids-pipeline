@@ -754,6 +754,9 @@ End time of the interpolation window in seconds.
 # --------------------------------
 # done in 02-frequency_filter.py
 
+zapline_fline: Optional[float] = None
+zapline_sfreq: Optional[float] = None
+
 l_freq: Optional[float] = None
 """
 The low-frequency cut-off in the highpass filtering step.

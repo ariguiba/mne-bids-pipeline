@@ -17,6 +17,7 @@ If config.interactive = True plots raw data and power spectral density.
 import numpy as np
 from types import SimpleNamespace
 from typing import Optional, Union, Literal, Iterable
+from meegkit import dss
 
 import mne
 
@@ -57,6 +58,29 @@ def get_input_fnames_frequency_filter(
         mf_reference_run=cfg.mf_reference_run,
     )
 
+def zapline(
+    raw: mne.io.BaseRaw, 
+    subject: str,
+    session: Optional[str],
+    run: str,
+    task: Optional[str],  
+    fline: float, 
+    sfreq: float
+) -> None:
+    "Uses Zapline to filter? data"
+    if fline is None:
+        msg = f"Not applying Zapline filter to data."
+    else:
+        msg = f"Zapline filtering data at with Fline {fline} Hz."
+
+    logger.info(**gen_log_kwargs(message=msg))
+
+    if fline is None:
+        return
+    
+    data = raw.get_data().T #shape = (n_samples, n_channels, n_trials)
+    out, _ = dss.dss_line(data, fline, sfreq) #, blocksize=10000, nremove=5, show=True, nkeep=1)
+    return out
 
 def notch_filter(
     raw: mne.io.BaseRaw,
@@ -199,6 +223,17 @@ def filter_data(
     )
 
     raw.load_data()
+
+    zapline(
+        raw=raw,
+        subject=subject,
+        session=session,
+        run=run,
+        task=task,
+        fline=cfg.zapline_fline,
+        sfreq=cfg.zapline_sfreq
+    )
+
     notch_filter(
         raw=raw,
         subject=subject,
@@ -277,6 +312,8 @@ def get_config(
         l_freq=config.l_freq,
         h_freq=config.h_freq,
         notch_freq=config.notch_freq,
+        zapline_fline=config.zapline_fline,
+        zapline_sfreq=config.zapline_sfreq,
         l_trans_bandwidth=config.l_trans_bandwidth,
         h_trans_bandwidth=config.h_trans_bandwidth,
         notch_trans_bandwidth=config.notch_trans_bandwidth,
